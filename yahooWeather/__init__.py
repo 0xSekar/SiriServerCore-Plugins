@@ -290,22 +290,26 @@ countries = {
 
 waitText = {
     'de-DE': [u"Einen Moment bitte", u"OK"],
-    'en-US': [u"One moment please", u"OK"]
+    'en-US': [u"One moment please", u"OK"],
+    'es-AR': [u"Un momento por favor", u"OK"]
 }
 
 errorText = {
     'de-DE': [u"Entschuldigung aber zur Zeit ist die Funktion nicht verfügbar."],
-    'en-US': [u"Sorry this is not available right now."]
+    'en-US': [u"Sorry this is not available right now."],
+    'es-AR': [u"Disculpe, pero no está disponible en este momento."]
 }
 
 noDataForLocationText = {
     'de-DE': [u"Entschuldigung aber für ihren Standort finde ich keine Daten."],
-    'en-US': [u"Sorry, I cannot find any data for your location."]
+    'en-US': [u"Sorry, I cannot find any data for your location."],
+    'es-AR': [u"Disculpe, no entuentro información para su localización."]
 }
 
 dailyForcast = {
     'de-DE': [u"Hier ist die Vorhersage für {0}, {1}"],
-    'en-US': [u"This is the forecast for {0}, {1}"]
+    'en-US': [u"This is the forecast for {0}, {1}"],
+    'es-AR': [u"Este es el pronóstico para {0}, {1}", u"He encontrado el pronóstico para {0}, {1}"]
 }
 
 yweather = "{http://xml.weather.yahoo.com/ns/rss/1.0}"
@@ -562,6 +566,7 @@ class yahooWeather(Plugin):
     
     @register("en-US", "(what( is|'s) the )?weather( like)? in (?P<location>[\w ]+?)$")
     @register('de-DE', "(wie ist das )?wetter in (?P<location>[\w ]+?)$")
+    @register('es-AR', u"((Cual|Cuál|Como) (es |está |esta )el )?(clima|pronóstico|pronostico|tiempo) en (?P<location>[\w ]+?)$")
     def forcastWeatherAtLocation(self, speech, language, regex):
         self.showWaitPlease(language)
         location = regex.group("location")
@@ -609,6 +614,7 @@ class yahooWeather(Plugin):
         
     @register("en-US", "weather|forecast")
     @register("de-DE", "wetter(vorhersage)?")
+    @register("es-AR", u"((Cual|Cuál|Como) (es |está |esta )el )?(clima|pronóstico|pronostico)( aquí|aqui|ahora)?")
     def forcastWeatherAtCurrentLocation(self, speech, language):
         location = self.getCurrentLocation()
         self.showWaitPlease(language)
