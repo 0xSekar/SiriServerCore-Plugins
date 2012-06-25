@@ -342,7 +342,7 @@ class yahooWeather(Plugin):
     def getWeatherLocation(self, locationId, xml):
         item = xml.find("channel/item")
         location = xml.find("channel/{0}location".format(yweather))
-        
+
         weatherLocation = WeatherLocation()
         if location is None:
             return weatherLocation
@@ -496,9 +496,8 @@ class yahooWeather(Plugin):
             weatherLocation = self.getWeatherLocation(loc[:-2], result)
             fiveDayForecast = "http://xml.weather.yahoo.com/forecastrss/{0}.xml".format(loc)
             
-            
             try:
-                result = self.getWebsite(fiveDayForecast, timeout=5)
+                result = getWebsite(fiveDayForecast, timeout=5)
                 result = ElementTree.XML(result)
                 item = result.find("channel/item")
             except:
