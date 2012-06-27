@@ -288,6 +288,18 @@ countries = {
     "zw": "Zimbabwe",
     }
 
+pressureText = {
+    'es-AR': {"IN": u"pulgadas", "MB": u"milibares"}
+}
+
+speedText = {
+    'es-AR': {"MPH": u"millas por hora", "KPH": u"kilómetros por hora"}
+}
+
+distanceText = {
+    'es-AR': {"Feet": u"pies", "Miles": u"millas", "Meters": u"metros", "Kilometers": u"kilómetros"}
+}
+
 waitText = {
     'de-DE': [u"Einen Moment bitte", u"OK"],
     'en-US': [u"One moment please", u"OK"],
@@ -297,19 +309,33 @@ waitText = {
 errorText = {
     'de-DE': [u"Entschuldigung aber zur Zeit ist die Funktion nicht verfügbar."],
     'en-US': [u"Sorry this is not available right now."],
-    'es-AR': [u"Disculpe, pero no está disponible en este momento."]
+    'es-AR': [u"Disculpe, pero no dispongo de esa información en este momento."]
 }
 
 noDataForLocationText = {
     'de-DE': [u"Entschuldigung aber für ihren Standort finde ich keine Daten."],
     'en-US': [u"Sorry, I cannot find any data for your location."],
-    'es-AR': [u"Disculpe, no entuentro información para su localización."]
+    'es-AR': [u"Disculpe, no encuentro información para su localización."]
 }
 
 dailyForcast = {
     'de-DE': [u"Hier ist die Vorhersage für {0}, {1}"],
     'en-US': [u"This is the forecast for {0}, {1}"],
     'es-AR': [u"Este es el pronóstico para {0}, {1}", u"He encontrado el pronóstico para {0}, {1}"]
+}
+
+moredataForcast = {
+    'de-DE': [u"Hier ist die erweiterten Vorhersage für {0}, {1}"],
+    'en-US': [u"Additionally, this is the extended forecast for {0}, {1}"],
+    'es-AR': [u"Adicionalmente, este es el pronóstico extendido para {0}, {1}"]
+}
+
+currentDataForcast = {
+    'es-AR': [u"La temperatura actual para {0} es {1} grados con una sensación térmica de {2} grados. La presión es de {3} {4} y la humedad relativa del aire de {9} por ciento. La visibilidad es de {5} {6} y la velocidad del viento de {7} {8},"]
+}
+
+sunriseDataForcast = {
+    'es-AR': [u"Hoy en {0} el sol sale a las {1} y se pone a las {2}."]
 }
 
 yweather = "{http://xml.weather.yahoo.com/ns/rss/1.0}"
@@ -469,7 +495,7 @@ class yahooWeather(Plugin):
         return current
         
 
-    def showCurrentWeatherWithWOEID(self, language, woeid, metric = True):
+    def showCurrentWeatherWithWOEID(self, language, woeid, metric = True, readTemp = False):
         # we can only get 2 day weather with woeid that suxx
         weatherLookup = "http://weather.yahooapis.com/forecastrss?w={0}&u={1}".format(woeid, "c" if metric else "f")
         result = getWebsite(weatherLookup, timeout=5)
@@ -538,20 +564,8 @@ class yahooWeather(Plugin):
             dailyForecasts.append(weatherDaily)
     
         forecast.dailyForecasts = dailyForecasts
-        snippet = WeatherForecastSnippet()
-        snippet.aceWeathers = [forecast]
+        return forecast
         
-        showViewsCMD = UIAddViews(self.refId)
-        showViewsCMD.dialogPhase = showViewsCMD.DialogPhaseSummaryValue
-        displaySnippetTalk = UIAssistantUtteranceView()
-        displaySnippetTalk.dialogIdentifier = "Weather#forecastCommentary"
-        countryName = countries[forecast.weatherLocation.countryCode.lower()] if forecast.weatherLocation.countryCode.lower() in countries else forecast.weatherLocation.countryCode
-        displaySnippetTalk.text = displaySnippetTalk.speakableText = random.choice(dailyForcast[language]).format(forecast.weatherLocation.city, countryName)
-        
-        showViewsCMD.views = [displaySnippetTalk, snippet]
-        
-        self.sendRequestWithoutAnswer(showViewsCMD)
-        self.complete_request()
         
     def getNameFromGoogle(self, request):
         try:
@@ -563,10 +577,7 @@ class yahooWeather(Plugin):
         except:
             return None
     
-    @register("en-US", "(what( is|'s) the )?weather( like)? in (?P<location>[\w ]+?)$")
-    @register('de-DE', "(wie ist das )?wetter in (?P<location>[\w ]+?)$")
-    @register('es-AR', u"((Cual|Cuál|Como) (es |está |esta )el )?(clima|pronóstico|pronostico|tiempo) en (?P<location>[\w ]+?)$")
-    def forcastWeatherAtLocation(self, speech, language, regex):
+    def getWeatherAtLocation(self, speech, language, regex):
         self.showWaitPlease(language)
         location = regex.group("location")
         # lets refine the location using google
@@ -583,7 +594,7 @@ class yahooWeather(Plugin):
         if result == None:
             self.say(random.choice(errorText[language]))
             self.complete_request()
-            return
+            return None
         
         root = ElementTree.XML(result)
         placeTypeCode = root.find("results/{0}place/{0}placeTypeName".format(place))
@@ -592,7 +603,7 @@ class yahooWeather(Plugin):
         if woeidElem is None or placeTypeCode is None:
             self.say(random.choice(noDataForLocationText[language]))
             self.complete_request()
-            return
+            return woeidElem
         
         if placeTypeCode.get("code") != "7": #damn is this not a city
             # lets ask google what it think
@@ -603,18 +614,14 @@ class yahooWeather(Plugin):
                 # ok we should now have more details, lets call our self
                 self.loopcounter += 1
                 self.forcastWeatherAtLocation(speech, language, x)
-                return
+                return woeidElem
             else:
                 self.say(random.choice(errorText[language]))
                 self.complete_request()
-                return
+                return woeidElem
+	return woeidElem
         
-        self.showCurrentWeatherWithWOEID(language, woeidElem.text)
-        
-    @register("en-US", "weather|forecast")
-    @register("de-DE", "wetter(vorhersage)?")
-    @register("es-AR", u"((Cual|Cuál|Como) (es |está |esta )el )?(clima|pronóstico|pronostico)( aquí|aqui|ahora)?")
-    def forcastWeatherAtCurrentLocation(self, speech, language):
+    def getWeatherAtCurrentLocation(self, speech, language):
         location = self.getCurrentLocation()
         self.showWaitPlease(language)
         
@@ -629,19 +636,103 @@ class yahooWeather(Plugin):
         if result == None:
             self.say(random.choice(errorText[language]))
             self.complete_request()
-            return
+            return None
         
         root = ElementTree.XML(result)
         woeidElem = root.find("results/{0}place/{0}woeid".format(place))
         
-        
-        
         if woeidElem is None:
             self.say(random.choice(noDataForLocationText[language]))
             self.complete_request()
-            return
+            return woeidElem
         
-        
-        self.showCurrentWeatherWithWOEID(language, woeidElem.text)
+        return woeidElem 
+
+    def createshowViewsCMD(self, forecast, language, text, speakableText):
+        snippet = WeatherForecastSnippet()
+        snippet.aceWeathers = [forecast]
+
+        showViewsCMD = UIAddViews(self.refId)
+        showViewsCMD.dialogPhase = showViewsCMD.DialogPhaseSummaryValue
+        displaySnippetTalk = UIAssistantUtteranceView()
+        displaySnippetTalk.dialogIdentifier = "Weather#forecastCommentary"
+        displaySnippetTalk.text = text
+        displaySnippetTalk.speakableText = speakableText
+
+        showViewsCMD.views = [displaySnippetTalk, snippet]
+	return showViewsCMD
+
+    @register('es-AR', u".*(amanecer|amanece|anochecer|anochece) ((hoy )?en |para )(?P<location>[\w ]+?)$")
+    def sunsetAtLocation(self, speech, language, regex):
+        woeidElem = self.getWeatherAtLocation(speech, language, regex)
+        if woeidElem is not None:
+            forecast = self.showCurrentWeatherWithWOEID(language, woeidElem.text)
+	    self.say(random.choice(sunriseDataForcast[language]).format(forecast.weatherLocation.city, forecast.currentConditions.sunrise, forecast.currentConditions.sunset))
+
+            self.complete_request()
+
+    @register('es-AR', u".*(amanecer|amanece|anochecer|anochece)( aquí| aqui| hoy)?")
+    def sunsetAtCurrentLocation(self, speech, language):
+        woeidElem = self.getWeatherAtCurrentLocation(speech, language)
+        if woeidElem is not None:
+            forecast = self.showCurrentWeatherWithWOEID(language, woeidElem.text)
+	    self.say(random.choice(sunriseDataForcast[language]).format(forecast.weatherLocation.city, forecast.currentConditions.sunrise, forecast.currentConditions.sunset))
+
+            self.complete_request()
+
+    @register('es-AR', u"((Cual|Cuál|Como) (es |está |esta )(el |la ))?(clima|tiempo|temperatura) (en |para )(?P<location>[\w ]+?)$")
+    def actualWeatherAtLocation(self, speech, language, regex):
+        woeidElem = self.getWeatherAtLocation(speech, language, regex)
+        if woeidElem is not None:
+            forecast = self.showCurrentWeatherWithWOEID(language, woeidElem.text)
+            countryName = countries[forecast.weatherLocation.countryCode.lower()] if forecast.weatherLocation.countryCode.lower() in countries else forecast.weatherLocation.countryCode
+            text = random.choice(moredataForcast[language]).format(forecast.weatherLocation.city, countryName)
+	    speakableText = random.choice(currentDataForcast[language]).format(forecast.weatherLocation.city, forecast.currentConditions.temperature, forecast.currentConditions.windChill, forecast.currentConditions.barometricPressure.value, pressureText[language][forecast.units.pressureUnits], forecast.currentConditions.visibility, distanceText[language][forecast.units.distanceUnits], forecast.currentConditions.windSpeed.value, speedText[language][forecast.units.speedUnits], forecast.currentConditions.percentHumidity) + random.choice(moredataForcast[language]).format(forecast.weatherLocation.city, countryName)
+	    showViewsCMD = self.createshowViewsCMD(forecast, language, text, speakableText)
+
+            self.sendRequestWithoutAnswer(showViewsCMD)
+            self.complete_request()
+
+    @register('es-AR', u"((Cual|Cuál|Como) (es |está |esta )(el |la ))?(clima|tiempo|temperatura)( aquí| aqui| ahora)?")
+    def actualWeatherAtCurrentLocation(self, speech, language):
+        woeidElem = self.getWeatherAtCurrentLocation(speech, language)
+        if woeidElem is not None:
+            forecast = self.showCurrentWeatherWithWOEID(language, woeidElem.text)
+            countryName = countries[forecast.weatherLocation.countryCode.lower()] if forecast.weatherLocation.countryCode.lower() in countries else forecast.weatherLocation.countryCode
+            text = random.choice(moredataForcast[language]).format(forecast.weatherLocation.city, countryName)
+	    speakableText = random.choice(currentDataForcast[language]).format(forecast.weatherLocation.city, forecast.currentConditions.temperature, forecast.currentConditions.windChill, forecast.currentConditions.barometricPressure.value, pressureText[language][forecast.units.pressureUnits], forecast.currentConditions.visibility, distanceText[language][forecast.units.distanceUnits], forecast.currentConditions.windSpeed.value, speedText[language][forecast.units.speedUnits], forecast.currentConditions.percentHumidity) + random.choice(moredataForcast[language]).format(forecast.weatherLocation.city, countryName)
+            showViewsCMD = self.createshowViewsCMD(forecast, language, text, speakableText)
+
+            self.sendRequestWithoutAnswer(showViewsCMD)
+            self.complete_request()
+
+    @register("en-US", "(what( is|'s) the )?weather( like)? in (?P<location>[\w ]+?)$")
+    @register('de-DE', "(wie ist das )?wetter in (?P<location>[\w ]+?)$")
+    @register('es-AR', u"((Cual|Cuál|Como) (es |está |esta )el )?(pronóstico|pronostico) (en |para )(?P<location>[\w ]+?)$")
+    def forcastWeatherAtLocation(self, speech, language, regex):
+	woeidElem = self.getWeatherAtLocation(speech, language, regex)
+	if woeidElem is not None:
+	    forecast = self.showCurrentWeatherWithWOEID(language, woeidElem.text)
+            countryName = countries[forecast.weatherLocation.countryCode.lower()] if forecast.weatherLocation.countryCode.lower() in countries else forecast.weatherLocation.countryCode
+            text = speakableText = random.choice(dailyForcast[language]).format(forecast.weatherLocation.city, countryName)
+            showViewsCMD = self.createshowViewsCMD(forecast, language, text, speakableText)
+
+            self.sendRequestWithoutAnswer(showViewsCMD)
+            self.complete_request()
+
+    @register("en-US", "weather|forecast")
+    @register("de-DE", "wetter(vorhersage)?")
+    @register("es-AR", u"((Cual|Cuál|Como) (es |está |esta )el )?(pronóstico|pronostico)( aquí| aqui| ahora)?")
+    def forcastWeatherAtCurrentLocation(self, speech, language):
+        woeidElem = self.getWeatherAtCurrentLocation(speech, language)
+        if woeidElem is not None:
+            forecast = self.showCurrentWeatherWithWOEID(language, woeidElem.text)
+            countryName = countries[forecast.weatherLocation.countryCode.lower()] if forecast.weatherLocation.countryCode.lower() in countries else forecast.weatherLocation.countryCode
+            text = speakableText = random.choice(dailyForcast[language]).format(forecast.weatherLocation.city, countryName)
+            showViewsCMD = self.createshowViewsCMD(forecast, language, text, speakableText)
+
+            self.sendRequestWithoutAnswer(showViewsCMD)
+            self.complete_request()
+
         
         
