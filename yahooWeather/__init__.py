@@ -338,6 +338,26 @@ sunriseDataForcast = {
     'es-AR': [u"Hoy en {0} el sol sale a las {1} y se pone a las {2}."]
 }
 
+temperatureDataForcast = {
+    'es-AR': [u"La temperatura actual en {0} es {1} grados, con una sensación térmica de {2} grados."]
+}
+
+pressureDataForcast = {
+    'es-AR': [u"La presión actual en {0} es {1} {2}."]
+}
+
+humidityDataForcast = {
+    'es-AR': [u"La humedad relativa del aire en {0} es {1} por ciento."]
+}
+
+visibilityDataForcast = {
+    'es-AR': [u"La visibilidad actual en {0} es {1} {2}."]
+}
+
+windspeedDataForcast = {
+    'es-AR': [u"La velocidad del viento en {0} es {1} {2}."]
+}
+
 yweather = "{http://xml.weather.yahoo.com/ns/rss/1.0}"
 geo = "{http://www.w3.org/2003/01/geo/wgs84_pos#}"
 place = "{http://where.yahooapis.com/v1/schema.rng}"
@@ -671,7 +691,7 @@ class yahooWeather(Plugin):
 
             self.complete_request()
 
-    @register('es-AR', u".*(amanecer|amanece|anochecer|anochece)( aquí| aqui| hoy)?")
+    @register('es-AR', u".*(amanecer|amanece|anochecer|anochece)( aquí| aqui| hoy)?$")
     def sunsetAtCurrentLocation(self, speech, language):
         woeidElem = self.getWeatherAtCurrentLocation(speech, language)
         if woeidElem is not None:
@@ -680,7 +700,97 @@ class yahooWeather(Plugin):
 
             self.complete_request()
 
-    @register('es-AR', u"((Cual|Cuál|Como) (es |está |esta )(el |la ))?(clima|tiempo|temperatura) (en |para )(?P<location>[\w ]+?)$")
+    @register('es-AR', u".*(temperatura)( actual)? ((hoy )?en |para )(?P<location>[\w ]+?)$")
+    def temperatureAtLocation(self, speech, language, regex):
+        woeidElem = self.getWeatherAtLocation(speech, language, regex)
+        if woeidElem is not None:
+            forecast = self.showCurrentWeatherWithWOEID(language, woeidElem.text)
+            self.say(random.choice(temperatureDataForcast[language]).format(forecast.weatherLocation.city, forecast.currentConditions.temperature, forecast.currentConditions.windChill))
+
+            self.complete_request()
+
+    @register('es-AR', u".*(temperatura)( actual)?( aquí| aqui| hoy)?$")
+    def temperatureAtCurrentLocation(self, speech, language):
+        woeidElem = self.getWeatherAtCurrentLocation(speech, language)
+        if woeidElem is not None:
+            forecast = self.showCurrentWeatherWithWOEID(language, woeidElem.text)
+            self.say(random.choice(temperatureDataForcast[language]).format(forecast.weatherLocation.city, forecast.currentConditions.temperature, forecast.currentConditions.windChill))
+
+            self.complete_request()
+
+    @register('es-AR', u".*(presión|presion)( actual)? ((hoy )?en |para )(?P<location>[\w ]+?)$")
+    def pressureAtLocation(self, speech, language, regex):
+        woeidElem = self.getWeatherAtLocation(speech, language, regex)
+        if woeidElem is not None:
+            forecast = self.showCurrentWeatherWithWOEID(language, woeidElem.text)
+            self.say(random.choice(pressureDataForcast[language]).format(forecast.weatherLocation.city, forecast.currentConditions.barometricPressure.value, pressureText[language][forecast.units.pressureUnits]))
+
+            self.complete_request()
+
+    @register('es-AR', u".*(presión|presion)( actual)?( aquí| aqui| hoy)?$")
+    def pressureAtCurrentLocation(self, speech, language):
+        woeidElem = self.getWeatherAtCurrentLocation(speech, language)
+        if woeidElem is not None:
+            forecast = self.showCurrentWeatherWithWOEID(language, woeidElem.text)
+            self.say(random.choice(pressureDataForcast[language]).format(forecast.weatherLocation.city, forecast.currentConditions.barometricPressure.value, pressureText[language][forecast.units.pressureUnits]))
+
+            self.complete_request()
+
+    @register('es-AR', u".*(humedad( relativa)?)( actual)? ((hoy )?en |para )(?P<location>[\w ]+?)$")
+    def humidityAtLocation(self, speech, language, regex):
+        woeidElem = self.getWeatherAtLocation(speech, language, regex)
+        if woeidElem is not None:
+            forecast = self.showCurrentWeatherWithWOEID(language, woeidElem.text)
+            self.say(random.choice(humidityDataForcast[language]).format(forecast.weatherLocation.city, forecast.currentConditions.percentHumidity))
+
+            self.complete_request()
+
+    @register('es-AR', u".*(humedad( relativa)?)( actual)?( aquí| aqui| hoy)?$")
+    def humidityAtCurrentLocation(self, speech, language):
+        woeidElem = self.getWeatherAtCurrentLocation(speech, language)
+        if woeidElem is not None:
+            forecast = self.showCurrentWeatherWithWOEID(language, woeidElem.text)
+            self.say(random.choice(humidityDataForcast[language]).format(forecast.weatherLocation.city, forecast.currentConditions.percentHumidity))
+
+            self.complete_request()
+
+    @register('es-AR', u".*(visibilidad)( actual)? ((hoy )?en |para )(?P<location>[\w ]+?)$")
+    def visibilityAtLocation(self, speech, language, regex):
+        woeidElem = self.getWeatherAtLocation(speech, language, regex)
+        if woeidElem is not None:
+            forecast = self.showCurrentWeatherWithWOEID(language, woeidElem.text)
+            self.say(random.choice(visibilityDataForcast[language]).format(forecast.weatherLocation.city, forecast.currentConditions.visibility, distanceText[language][forecast.units.distanceUnits]))
+
+            self.complete_request()
+
+    @register('es-AR', u".*(visibilidad)( actual)?( aquí| aqui| hoy)?$")
+    def visibilityAtCurrentLocation(self, speech, language):
+        woeidElem = self.getWeatherAtCurrentLocation(speech, language)
+        if woeidElem is not None:
+            forecast = self.showCurrentWeatherWithWOEID(language, woeidElem.text)
+            self.say(random.choice(visibilityDataForcast[language]).format(forecast.weatherLocation.city, forecast.currentConditions.visibility, distanceText[language][forecast.units.distanceUnits]))
+
+            self.complete_request()
+
+    @register('es-AR', u".*(velocidad del viento)( actual)? ((hoy )?en |para )(?P<location>[\w ]+?)$")
+    def windspeedAtLocation(self, speech, language, regex):
+        woeidElem = self.getWeatherAtLocation(speech, language, regex)
+        if woeidElem is not None:
+            forecast = self.showCurrentWeatherWithWOEID(language, woeidElem.text)
+            self.say(random.choice(windspeedDataForcast[language]).format(forecast.weatherLocation.city, forecast.currentConditions.windSpeed.value, speedText[language][forecast.units.speedUnits]))
+
+            self.complete_request()
+
+    @register('es-AR', u".*(velocidad del viento)( actual)?( aquí| aqui| hoy)?$")
+    def windspeedAtCurrentLocation(self, speech, language):
+        woeidElem = self.getWeatherAtCurrentLocation(speech, language)
+        if woeidElem is not None:
+            forecast = self.showCurrentWeatherWithWOEID(language, woeidElem.text)
+            self.say(random.choice(windspeedDataForcast[language]).format(forecast.weatherLocation.city, forecast.currentConditions.windSpeed.value, speedText[language][forecast.units.speedUnits]))
+
+            self.complete_request()
+
+    @register('es-AR', u"((Cual|Cuál|Como) (es |está |esta )(el |la ))?((pronóstico|pronostico) (detallado|completo)) (en |para )(?P<location>[\w ]+?)$")
     def actualWeatherAtLocation(self, speech, language, regex):
         woeidElem = self.getWeatherAtLocation(speech, language, regex)
         if woeidElem is not None:
@@ -693,7 +803,7 @@ class yahooWeather(Plugin):
             self.sendRequestWithoutAnswer(showViewsCMD)
             self.complete_request()
 
-    @register('es-AR', u"((Cual|Cuál|Como) (es |está |esta )(el |la ))?(clima|tiempo|temperatura)( aquí| aqui| ahora)?")
+    @register('es-AR', u"((Cual|Cuál|Como) (es |está |esta )(el |la ))?((pronóstico|pronostico) (detallado|completo))( aquí| aqui| ahora)?$")
     def actualWeatherAtCurrentLocation(self, speech, language):
         woeidElem = self.getWeatherAtCurrentLocation(speech, language)
         if woeidElem is not None:
@@ -722,7 +832,7 @@ class yahooWeather(Plugin):
 
     @register("en-US", "weather|forecast")
     @register("de-DE", "wetter(vorhersage)?")
-    @register("es-AR", u"((Cual|Cuál|Como) (es |está |esta )el )?(pronóstico|pronostico)( aquí| aqui| ahora)?")
+    @register("es-AR", u"((Cual|Cuál|Como) (es |está |esta )el )?(pronóstico|pronostico)( aquí| aqui| ahora)?$")
     def forcastWeatherAtCurrentLocation(self, speech, language):
         woeidElem = self.getWeatherAtCurrentLocation(speech, language)
         if woeidElem is not None:
