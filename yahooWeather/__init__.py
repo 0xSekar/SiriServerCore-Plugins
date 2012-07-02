@@ -365,7 +365,12 @@ place = "{http://where.yahooapis.com/v1/schema.rng}"
 idFinder = re.compile("/(?P<locationID>[A-z0-9_]+).html")
 
 class yahooWeather(Plugin):
-    
+
+    helpPhrases = {
+        "en-US": ["\nWeather:\n", "-What's the weather now|at <location>\n", "-Ex: What's the weather in New York\n"],
+        "es-AR": [u"\nClima:\n", u"-Cuál es el pronóstico ahora|para <lugar>?\n", u"-Cuál es el pronóstico detallado ahora|para <lugar>?\n", u"-Cuál es la velocidad actual del viento?\n", u"-Cuál es la visibilidad actual?\n", u"-Cuál es humedad relativa en Buenos Aires?\n", u"-Cuál es la presión actual?\n", u"-Cuál es la temperatura actual?\n", u"-A qué hora amacene en Madrid?\n"]
+    }
+
     def __init__(self):
         super(yahooWeather, self).__init__()
         self.loopcounter = 0

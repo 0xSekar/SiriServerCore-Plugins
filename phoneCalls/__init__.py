@@ -123,6 +123,11 @@ errorOnCallResponse={'en-US':
 
 class phonecallPlugin(Plugin):
 
+    helpPhrases = {
+        "en-US": ["\nPhone Call:\n", "-Call <contact> [<number type>]\n", "-Ex: Call John Smith work\n"],
+        "es-AR": [u"\nLlamadas Telefónicas:\n", "-Llamar a <contacto> [a <tipo tel.>]\n", " Ej:-Llamar a Juan Perez al trabajo\n"]
+    }
+
     def searchUserByName(self, personToLookup):
         search = ABPersonSearch(self.refId)
         search.scope = ABPersonSearch.ScopeLocalValue
