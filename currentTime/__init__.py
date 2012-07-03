@@ -8,32 +8,48 @@ import random
 import types
 import urllib
 import urllib2
-
-
-
+import locale
+import datetime
 
 localizations = {
     "search":
     {
       "de-DE": [u"Es wird gesucht ..."], 
-      "en-US": [u"Looking up ..."]
+      "en-US": [u"Looking up ..."],
+      "es-AR": [u"Buscando ..."]
     },                  
     "currentTime": 
     {
      "de-DE": [u"Es ist @{fn#currentTime}"], 
-     "en-US": [u"It is @{fn#currentTime}"]
+     "en-US": [u"It is @{fn#currentTime}"],
+     "es-AR": [u"Es la @{fn#currentTime}"]
     }, 
     "currentTimeIn": 
     {
       "de-DE": [u"Die Uhrzeit in {0} ist @{{fn#currentTimeIn#{1}}}:"], 
-      "en-US": [u"The time in {0} is @{{fn#currentTimeIn#{1}}}:"]
+      "en-US": [u"The time in {0} is @{{fn#currentTimeIn#{1}}}:"],
+      "es-AR": [u"La hora en {0} es @{{fn#currentTimeIn#{1}}}:"]
     },
     "failure":
     {
       "de-DE": [u"Es tut mir leid aber für eine Anfrage habe ich keine Uhrzeit."],
-      "en-US": [u"I'm sorry but I don't have a time for this request"]
+      "en-US": [u"I'm sorry but I don't have a time for this request"],
+      "es-AR": [u"Lo siento pero no tengo la hora para ese lugar."]
     }
 }
+
+dateFormat = {
+    'en-US': u"Today is {0} the %d.%m.%Y (Week: %W)",
+    'de-DE': u"Heute ist {0}, der %d.%m.%Y (Kalenderwoche: %W)",
+    'es-AR': u"Hoy es {0} %d/%m/%Y (Semana: %W)"
+}
+
+numToDay = {
+    'en-US': ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+    'de-DE': ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"],
+    'es-AR': ["Lunes", "Martes", u"Miércoles", "Jueves", "Viernes", u"Sábado", "Domingo"]
+}
+
 def getNameFromGoogle(request):
     try:
         result = getWebsite(request, timeout=5)
@@ -46,6 +62,11 @@ def getNameFromGoogle(request):
 
 
 class currentTime(Plugin):
+
+    helpPhrases = {
+        "en-US": ["\nDate & Time:\n", u"-What's time is it?\n", u"-What's the time for New York?\n"],
+        "es-AR": [u"\nFecha y Hora:\n", u"-Qué hora es?\n", u"-Qué hora es en Los Angeles?\n"]
+    }
     
     def showWait(self, language):
         textView = UIAssistantUtteranceView()
@@ -62,6 +83,7 @@ class currentTime(Plugin):
 
     @register("de-DE", "(Wie ?viel Uhr.*)|(.*Uhrzeit.*)")     
     @register("en-US", "(What.*time.*)|(.*current time.*)")
+    @register("es-AR", u"((que|qué).*hora es.*)|(.*hora actual.*)")
     def currentTime(self, speech, language):
         #first tell that we look it up
         self.showWait(language)
@@ -87,7 +109,8 @@ class currentTime(Plugin):
         self.complete_request()
     
     @register("de-DE", "(Wieviel Uhr.*in|Uhrzeit.*in) (?P<loc>[\w ]+)")
-    @register("en-US", "(What.*time.*in|.*current time.*in) (?P<loc>[\w ]+)")
+    @register("en-US", "(What.*time.*|.*current time.*)(in|for) (?P<loc>[\w ]+)")
+    @register("es-AR", u"((Que|Qué).*hora.*|.*hora actual.*)(es en|para) (?P<loc>[\w ]+)")
     def currentTimeIn(self, speech, language, matchedRegex):
         
         self.showWait(language)
@@ -98,10 +121,9 @@ class currentTime(Plugin):
         googleLocation = getNameFromGoogle(googleGuesser)
         if googleLocation != None:
             location = googleLocation
-        
         self.logger.debug(u"User requested time in: {0}".format(location))
         # ask yahoo for a timezoneID
-        query = u"select name from geo.places.belongtos where member_woeid in (select woeid from geo.places where text=\"{0}\") and placetype=31".format(location.encode("utf-8"))
+        query = u"select name from geo.places.belongtos where member_woeid in (select woeid from geo.places where text=\"{0}\") and placetype=31".format(location)
         request = u"http://query.yahooapis.com/v1/public/yql?q={0}&format=json&callback=".format(urllib.quote(query.encode("utf-8")))
         timeZoneId = None
         try:
@@ -173,3 +195,23 @@ class currentTime(Plugin):
 #    "aceId"=>"fbec8e13-5781-4b27-8c36-e43ec922dda3",
 #    "refId"=>"702C0671-DB6F-4914-AACD-30E84F7F7DF3",
 #    "group"=>"com.apple.ace.assistant"}
+class currentDate(Plugin):
+
+    helpPhrases = {
+        "en-US": [u"-What day|date?\n"],
+        "es-AR": [u"-Qué día|fecha es hoy?\n"]
+    }
+
+    @register("de-DE", "(Welcher Tag.*)|(Welches Datum.*)")
+    @register("en-US", "(What Day.*)|(What.*Date.*)")
+    @register("es-AR", u"(((Que|Qué) (día|dia)).*|((Qué|Que) Fecha).*)$")
+    def say_date(self, speech, language):
+	currentLocale = locale.getlocale( locale.LC_TIME )
+        now = datetime.date.today()
+	day = now.strftime("%u");
+        locale.setlocale(locale.LC_TIME, "")
+        result=now.strftime(dateFormat[language].format(numToDay[language][int(day)-1]))
+        self.say(result)
+	locale.setlocale( locale.LC_TIME, currentLocale )
+        self.complete_request()
+
