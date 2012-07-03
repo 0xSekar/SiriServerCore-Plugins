@@ -2,35 +2,13 @@
 # -*- coding: utf-8 -*-
 
 from plugin import *
-from siriObjects.baseObjects import ObjectIsCommand
-from siriObjects.contactObjects import ABPersonSearch, ABPersonSearchCompleted
+from siriApi.contactApi import *
+from siriApi.contactApi import text
 from siriObjects.phoneObjects import PhoneCall
 from siriObjects.systemObjects import SendCommands, StartRequest, ResultCallback, \
-    Person, PersonAttribute
-from siriObjects.uiObjects import AddViews, DisambiguationList, ListItem, \
-    AssistantUtteranceView
+    PersonAttribute
 
 responses = {
-'notFound': 
-    {'de-DE': u"Entschuldigung, ich konnte niemanden in deinem Telefonbuch finden der so heißt",
-     'en-US': u"Sorry, I did not find a match in your phone book",
-     'es-AR': u"Lo siento, no encuentro ese nombre entre sus contactos"
-    },
-'devel':
-    {'de-DE': u"Entschuldigung, aber diese Funktion befindet sich noch in der Entwicklungsphase",
-     'en-US': u"Sorry this feature is still under development",
-     'es-AR': u"Lo siento, esta funcionalidad está en desarrollo"
-    },
- 'select':
-    {'de-DE': u"Wen genau?", 
-     'en-US': u"Which one?",
-     'es-AR': u"¿A cuál de los siguientes?"
-    },
-'selectNumber':
-    {'de-DE': u"Welche Telefonnummer für {0}",
-     'en-US': u"Which phone one for {0}",
-     'es-AR': u"¿Qué número de teléfono para {0}"
-    },
 'callPersonSpeak':
     {'de-DE': u"Rufe {0}, {1} an.",
      'en-US': u"Calling {0}, {1}.",
@@ -41,43 +19,6 @@ responses = {
      'en-US': u"Calling {0}, {1}: {2}",
      'es-AR': u"Llamando a {0}, {1}: {2}"
     }
-}
-
-numberTypesLocalized= {
-'_$!<Mobile>!$_': {'en-US': u"mobile", 'de-DE': u"Handynummer", 'es-AR': u"Móvil"},
-'iPhone': {'en-US': u"iPhone", 'de-DE': u"iPhone-Nummer", 'es-AR': u"iPhone"},
-'_$!<Home>!$_': {'en-US': u"home", 'de-DE': u"Privatnummer", 'es-AR': "Casa"},
-'_$!<Work>!$_': {'en-US': u"work", 'de-DE': u"Geschäftsnummer", 'es-AR': "Trabajo"},
-'_$!<Main>!$_': {'en-US': u"main", 'de-DE': u"Hauptnummer", 'es-AR': "Principal"},
-'_$!<HomeFAX>!$_': {'en-US': u"home fax", 'de-DE': u'private Faxnummer', 'es-AR': "Fax casa"},
-'_$!<WorkFAX>!$_': {'en-US': u"work fax", 'de-DE': u"geschäftliche Faxnummer", 'es-AR': "Fax trabajo"},
-'_$!<OtherFAX>!$_': {'en-US': u"_$!<OtherFAX>!$_", 'de-DE': u"_$!<OtherFAX>!$_", 'es-AR': "_$!<OtherFAX>!$_"},
-'_$!<Pager>!$_': {'en-US': u"pager", 'de-DE': u"Pagernummer", 'es-AR': "Busca"},
-'_$!<Other>!$_':{'en-US': u"other phone", 'de-DE': u"anderes Telefon", 'es-AR': "Otro teléfono"}
-}
-
-namesToNumberTypes = {
-'de-DE': {'mobile': "_$!<Mobile>!$_", 'handy': "_$!<Mobile>!$_", 'zuhause': "_$!<Home>!$_", 'privat': "_$!<Home>!$_", 'arbeit': "_$!<Work>!$_"},
-'en-US': {'work': "_$!<Work>!$_",'home': "_$!<Home>!$_", 'mobile': "_$!<Mobile>!$_"},
-'es-AR': {'trabajo': "_$!<Work>!$_",'casa': "_$!<Home>!$_", u'móvil': "_$!<Mobile>!$_", u'movil': "_$!<Mobile>!$_", 'privado': "_$!<Home>!$_"}
-}
-
-speakableDemitter={
-'en-US': u", or ",
-'de-DE': u', oder ',
-'es-AR': u', o '
-}
-
-errorNumberTypes= {
-'de-DE': u"Ich habe dich nicht verstanden, versuch es bitte noch einmal.",
-'en-US': u"Sorry, I did not understand, please try again.",
-'es-AR': u"Lo siento, no entiendo, por favor inténtelo nuevamente."
-}
-
-errorNumberNotPresent= {
-'de-DE': u"Ich habe diese {0} von {1} nicht, aber eine andere.",
-'en-US': u"Sorry, I don't have a {0} number from {1}, but another.",
-'es-AR': u"Lo lamento, no tengo un número de {0} para {1} sino otro número."
 }
 
 errorOnCallResponse={'en-US':
@@ -129,78 +70,7 @@ class phonecallPlugin(Plugin):
     }
 
     def searchUserByName(self, personToLookup):
-        search = ABPersonSearch(self.refId)
-        search.scope = ABPersonSearch.ScopeLocalValue
-        search.name = personToLookup
-        answerObj = self.getResponseForRequest(search)
-        if ObjectIsCommand(answerObj,ABPersonSearchCompleted):
-            answer = ABPersonSearchCompleted(answerObj)
-            return answer.results if answer.results != None else []
-        else:
-            raise StopPluginExecution("Unknown response: {0}".format(answerObj))
-        return []
-           
-    def getNumberTypeForName(self, name, language):
-        # q&d
-        if name != None:
-            if name.lower() in namesToNumberTypes[language]:
-                return namesToNumberTypes[language][name.lower()]
-            else:
-                for key in numberTypesLocalized.keys():
-                    if numberTypesLocalized[key][language].lower() == name.lower():
-                        return numberTypesLocalized[key][language]
-        return name
-    
-    def findPhoneForNumberType(self, person, numberType, language):         
-        # first check if a specific number was already requested
-        phoneToCall = None
-        if numberType != None:
-            # try to find the phone that fits the numberType
-            phoneToCall = filter(lambda x: x.label == numberType, person.phones)
-	    if len(phoneToCall) == 0:
-		phoneToCall = None
-	    else:
-		phoneToCall = phoneToCall[0]
-        else:
-            favPhones = filter(lambda y: y.favoriteVoice if hasattr(y, "favoriteVoice") else False, person.phones)
-            if len(favPhones) == 1:
-                phoneToCall = favPhones[0]
-        if phoneToCall == None:
-            # lets check if there is more than one number
-            if len(person.phones) == 1:
-                if numberType != None:
-                    self.say(errorNumberNotPresent[language].format(numberTypesLocalized[numberType][language], person.fullName))
-                phoneToCall = person.phones[0]
-            else:
-                # damn we need to ask the user which one he wants...
-                while(phoneToCall == None):
-                    rootView = AddViews(self.refId, temporary=False, dialogPhase="Clarification", scrollToTop=False, views=[])
-                    sayit = responses['selectNumber'][language].format(person.fullName)
-                    rootView.views.append(AssistantUtteranceView(text=sayit, speakableText=sayit, listenAfterSpeaking=True,dialogIdentifier="ContactDataResolutionDucs#foundAmbiguousPhoneNumberForContact"))
-                    lst = DisambiguationList(items=[], speakableSelectionResponse="OK...", listenAfterSpeaking=True, speakableText="", speakableFinalDemitter=speakableDemitter[language], speakableDemitter=", ",selectionResponse="OK...")
-                    rootView.views.append(lst)
-                    for phone in person.phones:
-                        numberType = numberTypesLocalized[phone.label][language] if phone.label in numberTypesLocalized else phone.label
-                        item = ListItem()
-                        item.title = ""
-                        item.text = u"{0}: {1}".format(numberType, phone.number)
-                        item.selectionText = item.text
-                        item.speakableText = u"{0}  ".format(numberType)
-                        item.object = phone
-                        item.commands.append(SendCommands(commands=[StartRequest(handsFree=False, utterance=numberType)]))
-                        lst.items.append(item)
-                    answer = self.getResponseForRequest(rootView)
-                    numberType = self.getNumberTypeForName(answer, language)
-                    if numberType != None:
-                        matches = filter(lambda x: x.label == numberType, person.phones)
-                        if len(matches) == 1:
-                            phoneToCall = matches[0]
-                        else:
-                            self.say(errorNumberTypes[language])
-                    else:
-                        self.say(errorNumberTypes[language])
-        return phoneToCall
-             
+	return searchPerson(self, scope = ABPersonSearch.ScopeLocalValue, name = personToLookup)
     
     def call(self, phone, person, language):
         root = ResultCallback(commands=[])
@@ -225,24 +95,13 @@ class phonecallPlugin(Plugin):
             
         self.complete_request([root])
 
-    def presentPossibleUsers(self, persons, language):
-        root = AddViews(self.refId, False, False, "Clarification", [], [])
-        root.views.append(AssistantUtteranceView(responses['select'][language], responses['select'][language], "ContactDataResolutionDucs#disambiguateContact", True))
-        lst = DisambiguationList([], "OK!", True, "", speakableDemitter[language], ", ", "OK!")
-        root.views.append(lst)
-        for person in persons:
-            item = ListItem(person.fullName, person.fullName, [], person.fullName, person)
-            item.commands.append(SendCommands([StartRequest(False, "^phoneCallContactId^=^urn:ace:{0}".format(person.identifier))]))
-            lst.items.append(item)
-        return root
-    
     @register("de-DE", "ruf. (?P<name>[\w ]+?)( (?P<type>arbeit|zuhause|privat|mobil|handy.*|iPhone.*|pager))? an$")
     @register("en-US", "(make a )?call (to )?(?P<name>[\w ]+?)( (?P<type>work|home|mobile|main|iPhone|pager))?$")
     @register("es-AR", u"(Hacer (una |un ))?(llamada|llamar|llamado) (a )?(?P<name>[\w ]+?)((a (la |el)?|al )?(?P<type>trabajo|casa|móvil|movil|principal|iPhone|busca))?$")
     def makeCall(self, speech, language, regex):
         personToCall = regex.group('name')
         numberType = regex.group('type').lower() if "type" in regex.groupdict() and regex.group('type') is not None else None
-        numberType = self.getNumberTypeForName(numberType, language)
+        numberType = getNumberTypeForName(numberType, language)
         persons = self.searchUserByName(personToCall)
         personToCall = None
         if len(persons) > 0:
@@ -252,7 +111,7 @@ class phonecallPlugin(Plugin):
                 identifierRegex = re.compile("\^phoneCallContactId\^=\^urn:ace:(?P<identifier>.*)")
                 #  multiple users, ask user to select
                 while(personToCall == None):
-                    strUserToCall = self.getResponseForRequest(self.presentPossibleUsers(persons, language))
+                    strUserToCall = self.getResponseForRequest(presentPossibleUsers(self, persons, language))
                     self.logger.debug(strUserToCall)
                     # maybe the user clicked...
                     identifier = identifierRegex.match(strUserToCall)
@@ -267,8 +126,8 @@ class phonecallPlugin(Plugin):
                         self.say(errorNumberTypes[language])
                     
             if personToCall != None:
-                self.call(self.findPhoneForNumberType(personToCall, numberType, language), personToCall, language)
+                self.call(findPhoneForNumberType(self, personToCall, numberType, language), personToCall, language)
                 return # complete_request is done there
-        self.say(responses['notFound'][language])                         
+        self.say(text['notFound'][language].format(regex.group('name')))                         
         self.complete_request()
     
