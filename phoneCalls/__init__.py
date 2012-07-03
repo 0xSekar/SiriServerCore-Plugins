@@ -103,31 +103,12 @@ class phonecallPlugin(Plugin):
         numberType = regex.group('type').lower() if "type" in regex.groupdict() and regex.group('type') is not None else None
         numberType = getNumberTypeForName(numberType, language)
         persons = self.searchUserByName(personToCall)
-        personToCall = None
-        if len(persons) > 0:
-            if len(persons) == 1:
-                personToCall = persons[0]
-            else:
-                identifierRegex = re.compile("\^phoneCallContactId\^=\^urn:ace:(?P<identifier>.*)")
-                #  multiple users, ask user to select
-                while(personToCall == None):
-                    strUserToCall = self.getResponseForRequest(presentPossibleUsers(self, persons, language))
-                    self.logger.debug(strUserToCall)
-                    # maybe the user clicked...
-                    identifier = identifierRegex.match(strUserToCall)
-                    if identifier:
-                        strUserToCall = identifier.group('identifier')
-                        self.logger.debug(strUserToCall)
-                    for person in persons:
-                        if person.fullName == strUserToCall or person.identifier == strUserToCall:
-                            personToCall = person
-                    if personToCall == None:
-                        # we obviously did not understand him.. but probably he refined his request... call again...
-                        self.say(errorNumberTypes[language])
+        personToCall = personAction(self, persons, language)
                     
-            if personToCall != None:
-                self.call(findPhoneForNumberType(self, personToCall, numberType, language), personToCall, language)
-                return # complete_request is done there
-        self.say(text['notFound'][language].format(regex.group('name')))                         
-        self.complete_request()
+        if personToCall != None:
+            self.call(findPhoneForNumberType(self, personToCall, numberType, language), personToCall, language)
+            return # complete_request is done there
+	else:
+            self.say(text['notFound'][language].format(regex.group('name')))                         
+            self.complete_request()
     
