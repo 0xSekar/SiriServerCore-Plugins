@@ -57,8 +57,6 @@ Apple owns all the rights on Siri. I do not give any warranties or guaranteed su
 
 ==============================================================
 
-Siri Server Core Plugins
-========================
 
 Te resulta útil este desarrollo?
 --------------------------------
@@ -103,8 +101,8 @@ La prioridad de los plugins queda establecida por el orden de aparición (el pri
 Si un plugin necesita una clave (API-Key) de algún proveedor, esta clave debe ser ingresada en el archivo apiKeys.conf de tu instalación de SiriServerCore.
 
 
-Licensing the plugins
----------------------
+Licencia de los plugins
+-----------------------
 La mayoría de los plugins contienen un encabezado indicando su licencia. Usualmente puedes modificar los mismos siempre que no modifiques el encabezado.
 Los plugins pueden utilizarse en forma gratuita para uso personal no comercial. Si deseas utilizarlos comercialmente, necesitarás una licencia comercial para ellos y para el servidor SiriServerCore.
 Además, debes cumplir con los términos de licencia de cualquier servicio que el plugin utilice (por ejemplo, Yahoo clima no permite el uso comercial de su API, por lo tanto, no puede utilizarse el plugin de clima de Yahoo comercialmente aunque se disponga de un licencia comercial para estos plugins y para el servidor SiriServerCore.
