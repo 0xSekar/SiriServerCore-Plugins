@@ -66,12 +66,9 @@ class phonecallPlugin(Plugin):
 
     helpPhrases = {
         "en-US": ["\nPhone Call:\n", "-Call <contact> [<number type>]\n", "-Ex: Call John Smith work\n"],
-        "es-AR": [u"\nLlamadas Telefónicas:\n", "-Llamar a <contacto> [a <tipo tel.>]\n", " Ej:-Llamar a Juan Perez al trabajo\n"]
+        "es-AR": [u"\nLlamadas Telefónicas:\n", "-Llamar a <contacto> [a <tipo tel.>]\n", u"-Llamar a mi <relación> [a <tipo tel.>]\n", " Ej:-Llamar a Juan Perez al trabajo\n", " Ej:-Llamar a mi hijo\n"]
     }
 
-    def searchUserByName(self, personToLookup):
-	return searchPerson(self, scope = ABPersonSearch.ScopeLocalValue, name = personToLookup)
-    
     def call(self, phone, person, language):
         root = ResultCallback(commands=[])
         rootView = AddViews("", temporary=False, dialogPhase="Completion", views=[])
@@ -97,12 +94,12 @@ class phonecallPlugin(Plugin):
 
     @register("de-DE", "ruf. (?P<name>[\w ]+?)( (?P<type>arbeit|zuhause|privat|mobil|handy.*|iPhone.*|pager))? an$")
     @register("en-US", "(make a )?call (to )?(?P<name>[\w ]+?)( (?P<type>work|home|mobile|main|iPhone|pager))?$")
-    @register("es-AR", u"(Hacer (una |un ))?(llamada|llamar|llamado) (a )?(?P<name>[\w ]+?)((a (la |el)?|al )?(?P<type>trabajo|casa|móvil|movil|principal|iPhone|busca))?$")
+    @register("es-AR", u"(Hacer (una |un ))?(llamada|llamar|llamado) a (?!mi )(?P<name>[\w ]+?)((a (la |el )?|al )?(?P<type>trabajo|casa|móvil|movil|principal|iPhone|busca))?$")
     def makeCall(self, speech, language, regex):
         personToCall = regex.group('name')
         numberType = regex.group('type').lower() if "type" in regex.groupdict() and regex.group('type') is not None else None
         numberType = getNumberTypeForName(numberType, language)
-        persons = self.searchUserByName(personToCall)
+	persons = searchPerson(self, scope = ABPersonSearch.ScopeLocalValue, name = personToCall)
         personToCall = personAction(self, persons, language)
                     
         if personToCall != None:
@@ -112,3 +109,14 @@ class phonecallPlugin(Plugin):
             self.say(text['notFound'][language].format(regex.group('name')))                         
             self.complete_request()
     
+    @register("es-AR", u"(Hacer (una |un ))?(llamada|llamar|llamado) a mi (?P<relation>[\w ]+?)((a (la |el )?|al )?(?P<type>trabajo|casa|móvil|movil|principal|iPhone|busca))?$")
+    def makeCallRelated(self, speech, language, regex):
+        personToCall = regex.group('relation').strip()
+        numberType = regex.group('type').lower() if "type" in regex.groupdict() and regex.group('type') is not None else None
+        numberType = getNumberTypeForName(numberType, language)
+
+	personToCall = definePerson(self, scope = ABPersonSearch.ScopeLocalValue, name = None, relation=personToCall, me=True, language=language)
+                    
+        if personToCall != None:
+            self.call(findPhoneForNumberType(self, personToCall, numberType, language), personToCall, language)
+            return # complete_request is done there
