@@ -1,5 +1,18 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+#
+# This is a date/time plugin for SiriServerCore
+#
+# Created by Eichhoernchen
+# Modified and corrected and expanded by Sergio Karsvnie
+#
+# This file is free for private use.
+#
+# If you have a SiriServerCore commercial license
+# you are allowed to use this plugin commercially otherwise you are breaking the law
+#
+# This file can be freely modified, but this header must retain untouched
+#
 
 from plugin import *
 from siriObjects.clockObjects import ClockSnippet, ClockObject

@@ -3,26 +3,20 @@
 
 #
 # This is a weather plugin for SiriServerCore  
-# created by Eichhoernchen
 #
 # It uses various the services from yahoo
 #
+# Created by Sergio Karsvnie, based on the plugin by Eichhoernchen
 #
-# This file is free for private use, you need a commercial license for paid servers
+# This file is free for private use.
 #
-# It's distributed under the same license as SiriServerCore
-#
-# You can view the license here:
-# https://github.com/Eichhoernchen/SiriServerCore/blob/master/LICENSE
-#
-# So if you have a SiriServerCore commercial license 
+# If you have a SiriServerCore commercial license 
 # you are allowed to use this plugin commercially otherwise you are breaking the law
 #
 # You must make sure to get propper allowens from yahoo to use their API commercially
 #
 # This file can be freely modified, but this header must retain untouched
 #  
-# 
 
 from datetime import date
 from plugin import *

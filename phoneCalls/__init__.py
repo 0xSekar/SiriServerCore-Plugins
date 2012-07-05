@@ -1,6 +1,20 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+#
+# This is a Phone Call plugin for SiriServerCore
+#
+# Created by Sergio Karsvnie, based on the work by Eichhoernchen
+# Modified and corrected to use contactAPI and to accept related persons
+#
+# This file is free for private use.
+#
+# If you have a SiriServerCore commercial license
+# you are allowed to use this plugin commercially otherwise you are breaking the law
+#
+# This file can be freely modified, but this header must retain untouched
+#
+
 from plugin import *
 from siriApi.contactApi import *
 from siriApi.contactApi import text

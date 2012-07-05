@@ -1,8 +1,17 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-#by Joh Gerna thanks for help to john-dev
-#updated by Mike Pissanos (gaVRoS) for SiriServerCore
-#altered by Devon Stewart (blast_hardcheese) to improve reliability
+#
+# This is a help plugin for SiriServerCore
+#
+# Created by Sergio Karsvnie
+#
+# This file is free for private use.
+#
+# If you have a SiriServerCore commercial license
+# you are allowed to use this plugin commercially otherwise you are breaking the law
+#
+# This file can be freely modified, but this header must retain untouched
+#
 
 import re,os
 
