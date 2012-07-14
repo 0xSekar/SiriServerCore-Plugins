@@ -91,7 +91,7 @@ class phonecallPlugin(Plugin):
         rootView.callbacks = []
         
         # create some infos of the target
-        personAttribute=PersonAttribute(data=phone.number, displayText=person.fullName, obj=Person())
+        personAttribute=PersonAttribute(data=phone.number, displayText=person.fullName, obj=ABPerson())
         personAttribute.object.identifer = person.identifier
         call = PhoneCall("", recipient=phone.number, faceTime=False, callRecipient=personAttribute)
         
