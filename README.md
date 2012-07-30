@@ -35,6 +35,8 @@ At the moment there are:
   This plugin enables you to react on search button presses if something was not recognized by SiriServer.
   It will probably be extended to other delayed requests that might be handeled in the future.
 
+* **Short Message Plugin**:
+  This plugin allows you to send short messages using your voice to any contact. It also detect related persons.
 
 How do I enable the plugins?
 ----------------------------
@@ -77,7 +79,7 @@ Por el momento los plugins son los siguientes:
 
 * **LLamadas telefónicas**:
   Permite realizar llamadas telefónicas utilizando Siri a cualquier contacto.
-  También detecta personas relacionados para permitir realizar llamadas del tipo "Llamar a mi hermano".
+  También detecta personas relacionadas para permitir realizar llamadas del tipo "Llamar a mi hermano".
 
 * **Yahoo Clima**:
   Este plugin te dará el pronóstico en tu posición actual o en cualquier otro punto que indiques.
@@ -92,6 +94,9 @@ Por el momento los plugins son los siguientes:
 * **RequestHandler Plugin**:
   Este plugin permite la utilización del botón "Buscar en la WEB" que muestra Siri cuando no entiende un pedido.
 
+* **Mensajes cortos**:
+  Permite enviar SMS utiilzando siri a cualquier contacto.
+  También detecta personas relacionadas para permitir enviar mensajes del tipo "Enviar SMS a mi hermano".
 
 Cómo habilito los plugins?
 --------------------------
